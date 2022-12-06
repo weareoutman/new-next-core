@@ -1,0 +1,41 @@
+{
+  "name": "new-next-core",
+  "private": true,
+  "homepage": "https://github.com/easyops-cn/new-next-core",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:easyops-cn/new-next-core.git"
+  },
+  "license": "GPL-3.0",
+  "scripts": {
+    "prepare": "husky install",
+    "lint-staged": "lint-staged"
+  },
+  "browserslist": {
+    "development": [
+      "extends @next-core/browserslist-config-next/development"
+    ],
+    "production": [
+      "extends @next-core/browserslist-config-next/production"
+    ]
+  },
+  "devDependencies": {
+    "@babel/core": "^7.20.5",
+    "@types/react": "^18.0.26",
+    "@types/react-dom": "^18.0.9",
+    "@typescript-eslint/eslint-plugin": "^5.45.1",
+    "cross-env": "^7.0.3",
+    "eslint": "^8.29.0",
+    "eslint-plugin-react": "^7.31.11",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "husky": "^8.0.2",
+    "lerna": "^6.1.0",
+    "lint-staged": "^13.1.0",
+    "prettier": "^2.8.0",
+    "rimraf": "^3.0.2",
+    "typescript": "^4.9.3"
+  },
+  "workspaces": [
+    "packages/*"
+  ]
+}

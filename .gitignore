@@ -1,0 +1,11 @@
+dist
+dist-*
+node_modules
+.coverage
+.vscode
+.idea
+.DS_Store
+.schema
+.cache
+*.log
+report.*.json
