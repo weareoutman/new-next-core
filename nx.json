@@ -25,7 +25,8 @@
   "targetDefaults": {
     "build": {
       "dependsOn": ["^build"],
-      "inputs": ["prod", "^prod", "global"]
+      "inputs": ["prod", "^prod", "global"],
+      "outputs": ["{projectRoot}/dist"]
     },
     "test": {
       "inputs": ["default", "^prod", "global", "jest"],

@@ -27,14 +27,22 @@ module.exports = {
       "error",
       { allows: ["private"] },
     ],
-    "@typescript-eslint/explicit-function-return-type": [
-      "warn",
-      { allowExpressions: true },
-    ],
+    // "@typescript-eslint/explicit-function-return-type": [
+    //   "warn",
+    //   { allowExpressions: true },
+    // ],
     "@typescript-eslint/no-empty-interface": [
       "error",
       {
         allowSingleExtends: true,
+      },
+    ],
+    "@typescript-eslint/ban-types": [
+      "error",
+      {
+        types: {
+          Function: false,
+        },
       },
     ],
     "prefer-const": ["error", { destructuring: "all" }],

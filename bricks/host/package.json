@@ -1,0 +1,13 @@
+{
+  "name": "@next-bricks/host",
+  "version": "0.0.0",
+  "type": "module",
+  "sideEffects": true,
+  "scripts": {
+    "build": "cross-env NODE_ENV=production build-next-bricks",
+    "build:dev": "cross-env NODE_ENV=development build-next-bricks"
+  },
+  "devDependencies": {
+    "@next-core/build-next-bricks": "^0.0.0"
+  }
+}
