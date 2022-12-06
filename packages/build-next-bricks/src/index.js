@@ -5,6 +5,7 @@ import webpack from "webpack";
 import rimraf from "rimraf";
 // import HtmlWebpackPlugin from "HtmlWebpackPlugin";
 
+const { SourceMapDevToolPlugin } = webpack;
 const { ModuleFederationPlugin } = webpack.container;
 
 const startTime = Date.now();
@@ -23,52 +24,53 @@ try {
     });
   });
 
-  const packageName = process.cwd().split(path.sep).pop();
+  // const packageName = process.cwd().split(path.sep).pop();
 
   const packageJsonFile = await readFile(
     path.join(process.cwd(), "package.json"),
     { encoding: "utf-8" }
   );
   const packageJson = JSON.parse(packageJsonFile);
+  const packageName = packageJson.name.split("/").pop();
+  const libName = `bricks/${packageName}`;
 
   const require = createRequire(import.meta.url);
-  const elementPackageJsonPath = require.resolve(
-    "@next-core/element/package.json",
-    [process.cwd()]
+
+  const sharedPackages = ["react", "react-dom", "@next-core/element"];
+
+  const shared = Object.fromEntries(
+    await Promise.all(
+      sharedPackages.map(async (dep) => {
+        const depPackageJsonPath = require.resolve(`${dep}/package.json`, {
+          paths: [process.cwd()],
+        });
+        const depPackageJsonFile = await readFile(depPackageJsonPath, {
+          encoding: "utf-8",
+        });
+        const depPackageJson = JSON.parse(depPackageJsonFile);
+        return [
+          dep,
+          {
+            singleton: true,
+            version: depPackageJson.version,
+            requiredVersion: packageJson.dependencies?.[dep],
+          },
+        ];
+      })
+    )
   );
-  const elementPackageJsonFile = await readFile(elementPackageJsonPath, {
-    encoding: "utf-8",
-  });
-  const elementPackageJson = JSON.parse(elementPackageJsonFile);
 
-  const shared = [
-    {
-      react: {
-        singleton: true,
-        version: "18.2.0",
-        requiredVersion: "^18.0.0",
-      },
-      "react-dom": {
-        singleton: true,
-        version: "18.2.0",
-        requiredVersion: "^18.0.0",
-      },
-    },
-    {
-      "@next-core/element": {
-        singleton: true,
-        version: elementPackageJson.version,
-        requiredVersion: packageJson.dependencies?.["@next-core/element"],
-      },
-    },
-  ];
-
-  console.log(packageName, "shared:", shared);
+  // console.log(packageName, "shared:", shared);
 
   await new Promise((resolve, reject) => {
     webpack(
       {
         entry: {
+          ...(libName === "bricks/host"
+            ? {
+                polyfill: "./src/polyfill",
+              }
+            : null),
           index: "./src/index",
         },
         mode: isDevelopment ? "development" : "production",
@@ -105,22 +107,45 @@ try {
           ],
         },
         plugins: [
+          new SourceMapDevToolPlugin({
+            filename: "[file].map",
+            exclude: ["polyfill", "316", "784"],
+          }),
           new ModuleFederationPlugin({
-            name: packageName,
-            filename: "remoteEntry.js",
-            exposes:
-              packageName === "basic"
-                ? {
-                    "./x-button": "./src/x-button",
-                    "./y-button": "./src/y-button",
-                  }
-                : packageName === "form"
-                ? {
-                    "./f-input": "./src/f-input",
-                    "./f-select": "./src/f-select",
-                  }
-                : undefined,
+            name: libName,
             shared,
+            ...(libName === "bricks/host"
+              ? null
+              : {
+                  library: { type: "window", name: libName },
+                  filename: "remoteEntry.js",
+                  exposes:
+                    libName === "bricks/basic"
+                      ? {
+                          "./x-button": {
+                            import: "./src/x-button",
+                            name: "x-button",
+                          },
+                          "./y-button": {
+                            import: "./src/y-button",
+                            name: "y-button",
+                          },
+                        }
+                      : {
+                          "./f-input": {
+                            import: "./src/f-input",
+                            name: "f-input",
+                          },
+                          "./f-select": {
+                            import: "./src/f-select",
+                            name: "f-select",
+                          },
+                          "./all": {
+                            import: "./src/bootstrap",
+                            name: "all",
+                          },
+                        },
+                }),
           }),
           // new HtmlWebpackPlugin({
           //   template: './public/index.html',

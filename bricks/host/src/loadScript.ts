@@ -21,6 +21,7 @@ export function loadScript(
     };
     const script = document.createElement("script");
     script.src = fixedSrc;
+    script.async = true;
     script.onload = () => {
       resolve(fixedSrc);
       end();
