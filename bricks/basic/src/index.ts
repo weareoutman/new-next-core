@@ -1,3 +1,1 @@
-setTimeout(() => {
-  import("./bootstrap.js");
-}, 1000);
+import("./bootstrap.js");

@@ -1,4 +1,6 @@
 import path from "node:path";
+import { readFile } from "node:fs/promises";
+import { createRequire } from "node:module";
 import webpack from "webpack";
 import rimraf from "rimraf";
 // import HtmlWebpackPlugin from "HtmlWebpackPlugin";
@@ -22,6 +24,46 @@ try {
   });
 
   const packageName = process.cwd().split(path.sep).pop();
+
+  const packageJsonFile = await readFile(
+    path.join(process.cwd(), "package.json"),
+    { encoding: "utf-8" }
+  );
+  const packageJson = JSON.parse(packageJsonFile);
+
+  const require = createRequire(import.meta.url);
+  const elementPackageJsonPath = require.resolve(
+    "@next-core/element/package.json",
+    [process.cwd()]
+  );
+  const elementPackageJsonFile = await readFile(elementPackageJsonPath, {
+    encoding: "utf-8",
+  });
+  const elementPackageJson = JSON.parse(elementPackageJsonFile);
+
+  const shared = [
+    {
+      react: {
+        singleton: true,
+        version: "18.2.0",
+        requiredVersion: "^18.0.0",
+      },
+      "react-dom": {
+        singleton: true,
+        version: "18.2.0",
+        requiredVersion: "^18.0.0",
+      },
+    },
+    {
+      "@next-core/element": {
+        singleton: true,
+        version: elementPackageJson.version,
+        requiredVersion: packageJson.dependencies?.["@next-core/element"],
+      },
+    },
+  ];
+
+  console.log(packageName, "shared:", shared);
 
   await new Promise((resolve, reject) => {
     webpack(
@@ -65,57 +107,20 @@ try {
         plugins: [
           new ModuleFederationPlugin({
             name: packageName,
-            // library: { type: "window", name: packageName },
             filename: "remoteEntry.js",
-            // remotes: {
-            //   // [packageName === "basic" ? "form" : "basic"]: `${
-            //   //   packageName === "basic" ? "form" : "basic"
-            //   // }@./bricks/${
-            //   //   packageName === "basic" ? "form" : "basic"
-            //   // }/dist/remoteEntry.js`
-            //   // [packageName === "basic" ? "form" : "basic"]: packageName === "basic" ? "form" : "basic",
-            //   basic: "basic",
-            //   form: "form",
-            // },
             exposes:
               packageName === "basic"
                 ? {
-                    "./x-button": "./src/x-button/index",
-                    "./y-button": "./src/y-button/index",
+                    "./x-button": "./src/x-button",
+                    "./y-button": "./src/y-button",
                   }
                 : packageName === "form"
                 ? {
-                    "./f-input": "./src/f-input/index",
-                    "./f-select": "./src/f-select/index",
+                    "./f-input": "./src/f-input",
+                    "./f-select": "./src/f-select",
                   }
                 : undefined,
-            shared: [
-              {
-                react: {
-                  import: "react",
-                  singleton: true,
-                  shareKey: "shared-react",
-                  shareScope: "default",
-                  version: "18.2.0",
-                  requiredVersion: "^18.2.0",
-                },
-                "react-dom": {
-                  import: "react-dom",
-                  singleton: true,
-                  shareKey: "shared-react-dom",
-                  shareScope: "default",
-                  version: "18.2.0",
-                  requiredVersion: "^18.2.0",
-                },
-              },
-              {
-                "@next-core/element": {
-                  singleton: true,
-                  // import: '@next-core/element',
-                  // requiredVersion: require('../shared-library/package.json').version,
-                },
-              },
-            ],
+            shared,
           }),
           // new HtmlWebpackPlugin({
           //   template: './public/index.html',
