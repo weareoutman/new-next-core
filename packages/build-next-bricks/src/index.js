@@ -5,36 +5,25 @@ import webpack from "webpack";
 import rimraf from "rimraf";
 // import HtmlWebpackPlugin from "HtmlWebpackPlugin";
 
+const require = createRequire(import.meta.url);
+
 const { SourceMapDevToolPlugin } = webpack;
 const { ModuleFederationPlugin } = webpack.container;
 
 const startTime = Date.now();
 
 try {
-  const outputPath = path.join(process.cwd(), "dist");
+  const packageDir = process.cwd();
+  const outputPath = path.join(packageDir, "dist");
   const isDevelopment = process.env.NODE_ENV === "development";
 
-  await new Promise((resolve, reject) => {
-    rimraf(outputPath, (err) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve();
-      }
-    });
-  });
-
-  // const packageName = process.cwd().split(path.sep).pop();
-
   const packageJsonFile = await readFile(
-    path.join(process.cwd(), "package.json"),
+    path.join(packageDir, "package.json"),
     { encoding: "utf-8" }
   );
   const packageJson = JSON.parse(packageJsonFile);
   const packageName = packageJson.name.split("/").pop();
   const libName = `bricks/${packageName}`;
-
-  const require = createRequire(import.meta.url);
 
   const sharedPackages = ["react", "react-dom", "@next-core/element"];
 
@@ -42,7 +31,7 @@ try {
     await Promise.all(
       sharedPackages.map(async (dep) => {
         const depPackageJsonPath = require.resolve(`${dep}/package.json`, {
-          paths: [process.cwd()],
+          paths: [packageDir],
         });
         const depPackageJsonFile = await readFile(depPackageJsonPath, {
           encoding: "utf-8",
@@ -61,6 +50,17 @@ try {
   );
 
   // console.log(packageName, "shared:", shared);
+
+  await new Promise((resolve, reject) => {
+    rimraf(outputPath, (err) => {
+      if (err) {
+        console.error("Failed to clean dist:");
+        reject(err);
+      } else {
+        resolve();
+      }
+    });
+  });
 
   await new Promise((resolve, reject) => {
     webpack(
@@ -87,7 +87,6 @@ try {
           publicPath: "auto",
           hashDigestLength: 8,
         },
-        devtool: false,
         resolve: {
           extensions: [".ts", ".tsx", ".js", ".jsx", ".json"],
           extensionAlias: {
@@ -106,10 +105,16 @@ try {
             },
           ],
         },
+        devtool: false,
         plugins: [
           new SourceMapDevToolPlugin({
             filename: "[file].map",
-            exclude: ["polyfill", "316", "784"],
+            // Do not generate source map for these vendors:
+            exclude: [
+              "polyfill",
+              "316", // ReactDOM
+              "784", // React
+            ],
           }),
           new ModuleFederationPlugin({
             name: libName,

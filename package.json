@@ -9,6 +9,7 @@
   "license": "GPL-3.0",
   "scripts": {
     "prepare": "husky install",
+    "build": "lerna run build",
     "lint-staged": "lint-staged"
   },
   "browserslist": {

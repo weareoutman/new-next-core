@@ -26,8 +26,8 @@ class FInput extends UpdatingElement {
     this._root.render(
       <div>
         <label>
-          <span>{this.label}</span>
-          <input />
+          <span>{this.label}: </span>
+          <input placeholder="It works" />
         </label>
       </div>
     );
